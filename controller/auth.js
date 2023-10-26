@@ -19,9 +19,9 @@ exports.createuser = async (req, res) => {
   try {
     let user = await User.findOne({ email: req.body.email });
     if (user)
-      return res.status(400).json({
+      return res.status(409).json({
         code: RESPONS_CODE.ERROR,
-        message: "email already exits!",
+        message: "User already exists!",
       });
 
     user = new User(
@@ -51,7 +51,8 @@ exports.createuser = async (req, res) => {
     );
 
     return res.status(200).json({
-      message: "successfully register",
+      message: "User successfully created",
+      code: RESPONS_CODE.SUCCESS,
       data: {
         token: acctoken,
         // you also apply same name of user for response user it's not affect of variabble user
@@ -76,25 +77,25 @@ exports.loginuser = async (req, res) => {
   // login ma kadapi validate nai karvanu kem ke e je validate function ma lakhyu hase e chaeck karse..
   //   const { error } = validateUser(req.body);
   //   if (error) return res.status(404).send(error.details[0].message);
-// console.log(res);
+  // console.log(res);
   try {
     let user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(401).json({
+      return res.status(510).json({
         code: RESPONS_CODE.UNAUTHORIZED,
-        message: "Invalid email",
+        message: "Invalid email address",
       });
     }
     const decryptedData = await bcrypt.compare(
       req.body.password,
       user.password
     );
-console.log(decryptedData);
+    console.log(decryptedData);
     if (!decryptedData) {
       console.log(res);
       return res.status(401).json({
         code: RESPONS_CODE.UNAUTHORIZED,
-        message: "INVALID PASSWORD.",
+        message: "Invalid password.",
       });
     }
     const acctoken = jwt.sign(
@@ -106,7 +107,8 @@ console.log(decryptedData);
       { expiresIn: 60 * 60 }
     );
     return res.status(200).json({
-      message: "successfully login",
+      message: "Login Successful",
+      code: RESPONS_CODE.SUCCESS,
       token: acctoken,
       data: {
         name: user.userName,
@@ -127,7 +129,7 @@ exports.getAllUser = async (req, res) => {
     const users = await User.find();
     return res.status(200).json({
       code: RESPONS_CODE.SUCCESS,
-      message: "successfully fetch",
+      message: "successfully get all users",
       users: users,
     });
   } catch (err) {
@@ -241,6 +243,7 @@ exports.getHistory = async (req, res) => {
   if (!user) {
     return res.status(404).json({
       message: "user not found",
+      code: RESPONS_CODE.ERROR
     });
   }
 
@@ -248,12 +251,14 @@ exports.getHistory = async (req, res) => {
 
   res.status(200).json({
     data: user,
-    message: "success",
+    message: "success fetch data",
+    code: RESPONS_CODE.SUCCESS
   });
   try {
   } catch (err) {
     res.status(404).json({
-      message: "bad",
+      message: "bad request",
+      code: RESPONS_CODE.ERROR
     });
   }
 };
@@ -266,7 +271,7 @@ exports.deleteUser = async (req, res) => {
     if (!deleteduser) {
       return res.status(404).json({
         code: RESPONS_CODE.ERROR,
-        mesage: "user nnot found",
+        mesage: "user not found",
       });
     }
     // await deleteduser.save();

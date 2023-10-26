@@ -15,7 +15,7 @@ exports.getAllBooks = async (req, res) => {
   try {
     const books = await Book.find();
     return res.status(200).json({
-      message: "all book retrived successfully",
+      message: "successfully get all books",
       code: RESPONS_CODE.SUCCESS,
       data: books,
     });
@@ -140,7 +140,7 @@ exports.updateBook = async (req, res) => {
       });
     }
     return res.status(200).json({
-      message: "book updateD successfully",
+      message: "book updated successfully",
       data: book,
       code: RESPONS_CODE.SUCCESS,
     });

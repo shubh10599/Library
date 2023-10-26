@@ -59,11 +59,13 @@ exports.issueBook = async (req, res) => {
 
     return res.status(201).json({
       message: "book issued successfully",
-      data: user.borrowedBook,
+      // data: user.borrowedBook,
+      code: RESPONS_CODE.SUCCESS
     });
   } catch (err) {
     return res.status(500).json({
       message: err.message,
+      code: RESPONS_CODE.ERROR
     });
   }
 };
@@ -112,12 +114,12 @@ exports.returnBook = async (req, res) => {
 
     let book = await Book.findById(bookid);
     book.available = true;
-    
+
     await user.save();
     await book.save();
     return res.status(200).json({
       message: "successfully returned",
-      data: user,
+      // data: user,
       code: RESPONS_CODE.SUCCESS,
     });
   } catch (err) {
