@@ -1,4 +1,4 @@
-const cors = require('cors')
+const cors = require('cors');
 const express = require("express");
 const dotenv = require("dotenv");
 const app = express();
@@ -13,11 +13,12 @@ const { uploadImage } = require('./firebase/index')
 
 app.use(express.json());
 dotenv.config();
+app.use(cors())
 
-app.use("/api/books", cors(), book);
-app.use("/api/user", cors(), auth);
+app.use("/api/books", book);
+app.use("/api/user", auth);
 // app.use("/user", userController);
-app.use("/api/user/issuebook", cors(), issueBook);
+app.use("/api/user/issuebook", issueBook);
 // app.use("/", collection);
 mongoose
   .connect(process.env.mongo_url)
@@ -32,7 +33,7 @@ app.get("/", (req, res) => {
   res.send("hello everyone!");
 });
 
-app.post("/test-upload", cors(), async (req, res) => {
+app.post("/test-upload", async (req, res) => {
   // const file = {
   //   type: req.file.mimetype,
   //   buffer: req.file.buffer
