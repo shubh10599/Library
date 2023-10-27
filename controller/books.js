@@ -2,6 +2,8 @@
 // const route = express.Router();
 const _ = require("lodash");
 const { Book } = require("../model/books");
+const bucket = require("../firebase/firebaseconfig");
+const admin = require("firebase-admin");
 // const {
 //   verifyToken,
 //   veriftTokenAndUser,
@@ -14,6 +16,7 @@ const { RESPONS_CODE } = require("../config");
 exports.getAllBooks = async (req, res) => {
   try {
     const books = await Book.find();
+
     return res.status(200).json({
       message: "successfully get all books",
       code: RESPONS_CODE.SUCCESS,
@@ -54,8 +57,24 @@ exports.getBookById = async (req, res) => {
 // route.post("/", verifyToken, async (req, res) => {
 exports.createBook = async (req, res) => {
   try {
-    const book = new Book(
-      _.pick(req.body, [
+    const imageFile = req.file;
+
+    const fileName = `unique_filename_${new Date().getTime()}.jpg`; // Customize as needed
+
+    // Create a reference to the image file in Firebase Storage
+    const file = bucket.file(fileName);
+
+    // Create a write stream to upload the file
+    const blobStream = file.createWriteStream({
+      metadata: {
+        contentType: imageFile.mimetype,
+      },
+    });
+
+    // Handle successful upload
+    blobStream.on("finish", async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+      const submitData = _.pick(req.body, [
         "title",
         "author",
         "available",
@@ -64,14 +83,26 @@ exports.createBook = async (req, res) => {
         "image",
         "createdAt",
         "updatedAt",
-      ])
-    );
-    const result = await book.save();
-    return res.status(200).json({
-      message: "book created successsully",
-      code: RESPONS_CODE.SUCCESS,
-      data: result,
+      ]);
+
+      const book = new Book({ ...submitData, image: publicUrl });
+
+      const result = await book.save();
+      return res.status(201).json({
+        message: "book created successsully",
+        code: RESPONS_CODE.SUCCESS,
+        data: result,
+      });
     });
+
+    // Handle any errors during the upload
+    blobStream.on("error", (error) => {
+      console.error(error);
+      res.status(500).json({ error: "Image upload failed" });
+    });
+
+    // Start the upload by sending the image buffer
+    blobStream.end(imageFile.buffer);
   } catch (err) {
     return res.status(400).json({
       message: err.message,

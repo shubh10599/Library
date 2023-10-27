@@ -1,26 +1,10 @@
-// Import the functions you need from the SDKs you need
-const dotenv = require('dotenv');
-// import { initializeApp } from "firebase/app";
-const { initializeApp } = require('firebase/app')
+const admin = require("firebase-admin");
 
-dotenv.config()
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+const serviceAccount = require("../config/serviceAccountKey.json");
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.APIKEY,
-  authDomain: process.env.AUTHDOMAIN,
-  projectId: process.env.PROJECTID,
-  storageBucket: process.env.STORAGEBUCKET,
-  messagingSenderId: process.env.MESSAGINGSENDERID,
-  appId: process.env.APPID
-};
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: "gs://library-storage-725ec.appspot.com",
+});
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// export const db = getFireStore();
-// module.exports= db;
-
-module.exports = app; 
+module.exports = admin.storage().bucket();
