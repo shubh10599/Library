@@ -1,27 +1,19 @@
+var admin = require("firebase-admin");
 const express = require('express');
-const app = express();
-require('dotenv').config();
-const { getStorage, ref, uploadBytesResumable } = require('firebase/storage');
-const { signInAnonymously } = require('firebase/auth');
-const appFB = require('./firebaseconfig');
+const app = express()
+// const { initializeApp } = require('firebase-admin/app');
+const googleStorage = require('@google-cloud/storage');
+var serviceAccount = require("./serviceAccount.json");
 
-const uploadImage = async (quentity) => {
-    const storageFB = getStorage();
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: 'gs://fir-6ea31.appspot.com'
+});
 
-    await signInAnonymously(appFB);
+const bucket = admin.storage().bucket()
 
-    if (quentity === 'single') {
-        const dateTime = Date.now();
-        const fileName = `images/${dateTime}`;
-        const storageRef = ref(storageFB, fileName);
-        // const metaData = {
-        //     contentType: file.type,
-        // };
-        await uploadBytesResumable(storageRef);
-        // await uploadBytesResumable(storageRef, file.buffer, metaData);
+exports.fileUpload = (file) => {
+    bucket.upload(file);
 
-        return fileName;
-    }
+    // return file Path..
 }
-
-module.exports = { uploadImage }
