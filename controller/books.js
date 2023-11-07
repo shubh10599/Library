@@ -2,6 +2,8 @@
 // const route = express.Router();
 const _ = require("lodash");
 const { Book } = require("../model/books");
+const bucket = require("../firebase/firebaseconfig");
+
 // const {
 //   verifyToken,
 //   veriftTokenAndUser,
@@ -10,16 +12,38 @@ const { Book } = require("../model/books");
 // const { User } = require("../model/user");
 const { RESPONS_CODE } = require("../config");
 
+const config = {
+  action: "read", // Specify 'read' for object retrieval
+  expires: "2030-01-01T00:00:00Z", // Set the expiration time
+};
+
+const getSignedImageUrls = (books) => {
+  return Promise.all(
+    books.map(async (book) => {
+      if (book.image) {
+        const bucketImage = bucket.file(book.image);
+        const signedUrl = await bucketImage.getSignedUrl(config);
+        book.image = signedUrl[0]; // Replace the original URL with the signed URL
+      }
+      return book;
+    })
+  );
+};
+
 // route.get("/", verifyToken, async (req, res) => {
 exports.getAllBooks = async (req, res) => {
   try {
     const books = await Book.find();
+    // Generate signed URLs for book images
+    const booksWithSignedUrls = await getSignedImageUrls(books);
+
     return res.status(200).json({
-      message: "successfully get all books",
+      message: "Successfully get all books with signed URLs",
       code: RESPONS_CODE.SUCCESS,
-      data: books,
+      data: booksWithSignedUrls,
     });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({
       message: err.message,
       code: RESPONS_CODE.ERROR,
@@ -54,8 +78,23 @@ exports.getBookById = async (req, res) => {
 // route.post("/", verifyToken, async (req, res) => {
 exports.createBook = async (req, res) => {
   try {
-    const book = new Book(
-      _.pick(req.body, [
+    const imageFile = req.file;
+
+    const fileName = `${imageFile.originalname}_${new Date().getTime()}.jpg`; // Customize as needed
+
+    // Create a reference to the image file in Firebase Storage
+    const file = bucket.file(fileName);
+
+    // Create a write stream to upload the file
+    const blobStream = file.createWriteStream({
+      metadata: {
+        contentType: imageFile.mimetype,
+      },
+    });
+
+    // Handle successful upload
+    blobStream.on("finish", async () => {
+      const submitData = _.pick(req.body, [
         "title",
         "author",
         "available",
@@ -64,14 +103,26 @@ exports.createBook = async (req, res) => {
         "image",
         "createdAt",
         "updatedAt",
-      ])
-    );
-    const result = await book.save();
-    return res.status(200).json({
-      message: "book created successsully",
-      code: RESPONS_CODE.SUCCESS,
-      data: result,
+      ]);
+
+      const book = new Book({ ...submitData, image: file.name });
+
+      const result = await book.save();
+      return res.status(201).json({
+        message: "book created successsully",
+        code: RESPONS_CODE.SUCCESS,
+        data: result,
+      });
     });
+
+    // Handle any errors during the upload
+    blobStream.on("error", (error) => {
+      console.error(error);
+      res.status(500).json({ error: "Image upload failed" });
+    });
+
+    // Start the upload by sending the image buffer
+    blobStream.end(imageFile.buffer);
   } catch (err) {
     return res.status(400).json({
       message: err.message,

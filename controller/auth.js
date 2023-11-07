@@ -104,7 +104,7 @@ exports.loginuser = async (req, res) => {
         isAdmin: user.isAdmin,
       },
       process.env.token_scrk,
-      { expiresIn: 60 * 60 }
+      { expiresIn: "2d" }
     );
     return res.status(200).json({
       message: "Login Successful",
@@ -243,7 +243,7 @@ exports.getHistory = async (req, res) => {
   if (!user) {
     return res.status(404).json({
       message: "user not found",
-      code: RESPONS_CODE.ERROR
+      code: RESPONS_CODE.ERROR,
     });
   }
 
@@ -252,13 +252,13 @@ exports.getHistory = async (req, res) => {
   res.status(200).json({
     data: user,
     message: "success fetch data",
-    code: RESPONS_CODE.SUCCESS
+    code: RESPONS_CODE.SUCCESS,
   });
   try {
   } catch (err) {
     res.status(404).json({
       message: "bad request",
-      code: RESPONS_CODE.ERROR
+      code: RESPONS_CODE.ERROR,
     });
   }
 };
